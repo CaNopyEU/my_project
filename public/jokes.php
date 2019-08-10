@@ -6,28 +6,40 @@
     </head> -->
 <?php
 try {
-$pdo = new PDO('mysql:host=localhost;dbname=ijdb;
-charset=utf8', 'ijdbuser', 'mypassword');
-$pdo->setAttribute(PDO::ATTR_ERRMODE,
-PDO::ERRMODE_EXCEPTION);
+    include __DIR__ . '/../includes/DatabaseConnection.php';
+    include __DIR__ . '/../includes/DatabaseFunctions.php';
 
-$sql = 'SELECT `joketext`, `id` FROM joke';
+    $result = findAll($pdo, 'joke');
 
-$jokes = $pdo->query($sql);
+    $jokes = [];
+    foreach ($result as $joke) {
+        $author = findById($pdo, 'author', 'id',
+        $joke['authorId']);
 
-$title = 'Joke list';
+        $jokes[] = [
+            'id' => $joke['id'],
+            'joketext' => $joke['joketext'],
+            'jokedate' => $joke['jokedate'],
+            'name' => $author['name'],
+            'email' => $author['email']
+        ];
+    }
 
-ob_start();
+    $title = 'Joke list';
 
-include  __DIR__ . '/../templates/jokes.html.php';
+    $totalJokes = total($pdo, 'joke');
+    
+    ob_start();
 
-$output = ob_get_clean();
+    include  __DIR__ . '/../templates/jokes.html.php';
+
+    $output = ob_get_clean();
 }
 catch (PDOException $e) {
-$title = 'An error has occurred';
+    $title = 'An error has occurred';
 
-$output = 'Database error: ' . $e->getMessage() . ' in '
-. $e->getFile() . ':' . $e->getLine();
+    $output = 'Database error: ' . $e->getMessage() . '
+    in ' . $e->getFile() . ':' . $e->getLine();
 }
 
 include  __DIR__ . '/../templates/layout.html.php';
