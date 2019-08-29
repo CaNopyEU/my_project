@@ -1,47 +1,68 @@
 <?php
 namespace Ninja;
 
-class EntryPoint {
-	private $route;
-	private $method;
+class EntryPoint
+{
+    private $route;
+    private $method;
     private $routes;
 
-	public function __construct(string $route, string $method, \Ninja\Routes $routes) {
-		$this->route = $route;
+    public function __construct(string $route, string $method, \Ninja\Routes $routes)
+    {
+        $this->route = $route;
         $this->routes = $routes;
-		$this->method = $method;
-		$this->checkUrl();
-	}
-	private function checkUrl() {
-		if ($this->route !== strtolower($this->route)) {
-			http_response_code(301);
-			header('location: ' . strtolower($this->route));
-		}
-	}
-	private function loadTemplate($templateFileName, $variables = []) {
-		extract($variables);
+        $this->method = $method;
+        $this->checkUrl();
+    }
 
-		ob_start();
-		include  __DIR__ . '/../../templates/' . $templateFileName;
+    private function checkUrl() {
+        if ($this->route !== strtolower($this->route)) {
+            http_response_code(301);
+            header('location: ' . strtolower($this->route));
+        }
+    }
 
-		return ob_get_clean();
-	}
+    private function loadTemplate($templateFileName, $variables = [])
+    {
+        extract($variables);
 
-	public function run() {
-		$routes = $this->routes->getRoutes();
+        ob_start();
+        include __DIR__ . '/../../templates/' . $templateFileName;
 
-		$controller = $routes[$this->route][$this->method]['controller'];
-		$action = $routes[$this->route][$this->method]['action'];
+        return ob_get_clean();
+    }
 
-		$page = $controller->$action();
+    public function run(){
 
-		$title = $page['title'];
-		if (isset($page['variables'])) {
-			$output = $this->loadTemplate($page['template'], $page['variables']);
-		}
-		else {
-			$output = $this->loadTemplate($page['template']);
-		}
-		include  __DIR__ . '/../../templates/layout.html.php';
-	}
+        $routes = $this->routes->getRoutes();
+        $authentication = $this->routes->getAuthentication();
+
+        if (isset($routes[$this->route]['login'])
+        && !$authentication->isLoggedIn()) {
+            header('location: /login/error');
+        }
+        else if (isset($routes[$this->route]['permissions'])
+        && !$this->routes->checkPermission($routes[$this->route]['permissions'])) {
+            header('location: /login/permissionserror');
+        }
+        $controller = $routes[$this->route][$this->method]['controller'];
+        $action = $routes[$this->route][$this->method]['action'];
+        $page = $controller->$action();
+
+        $title = $page['title'];
+
+        if(isset($page['variables'])){
+            $output = $this->loadTemplate($page['template'],
+            $page['variables']);
+        }
+        else {
+            $output = $this->loadTemplate($page['template']);
+        }
+
+        echo $this->loadTemplate('layout.html.php', [
+            'loggedIn' => $authentication->isLoggedIn(),
+            'output' => $output,
+            'title' => $title
+        ]);
+    }
 }

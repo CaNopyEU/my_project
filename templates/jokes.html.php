@@ -1,48 +1,40 @@
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>List of jokes</title>
-    </head>
-    <body>
-        <?php if (isset($error)): ?>
-        <p>
-            <?php echo $error; ?>
-        </p>
-        <?php else: ?>
+<div class="jokelist">
 
-            <p><?=$totalJokes?> jokes have been submitted to the Internet Joke Database.</p>
+<ul class="categories">
+    <?php foreach ($categories as $category) { ?>
+        <li><a href="/joke/list?category=<?=$category->id?>">
+            <?=$category->name?></a>
+        </li>
+    <?php }?>
+</ul>
 
-            <?php foreach ($jokes as $joke): ?>
-            <blockquote>
-                <p>
-                <?=htmlspecialchars($joke['joketext'], ENT_QUOTES,
-                'UTF-8')?>
+<div class="jokes">
 
-                (by <a href="mailto:<?=htmlspecialchars(
-                $joke['email'],
-                ENT_QUOTES,
-                    'UTF-8'
-            ); ?>">
-                <?=htmlspecialchars(
-                        $joke['name'],
-                        ENT_QUOTES,
-                    'UTF-8'
-                    ); ?></a> on
-            <?php
-            $date = new DateTime($joke['jokedate']);
+<p><?=$totalJokes?> jokes have been submitted to the Internet Joke Database.</p>
+<?php  foreach ($jokes as $joke):?>
+<blockquote>
+    <p>
+    <?=htmlspecialchars($joke->joketext,ENT_QUOTES, 'UTF-8'); ?>
 
-            echo $date->format('jS F Y');
-            ?>)
-            <a href="/joke/edit?id=<?=$joke['id']?>">Edit</a>
-                <form action="/joke/delete" method="post">
-                    <input type="hidden" name="id"
-                    value="<?=$joke['id']?>">
-                    <input type="submit" value="Delete">
-                </form>
-                </p>
-            </blockquote>
-            <?php endforeach; ?>
+    (by <a href="mailto:<?=htmlspecialchars($joke->getAuthor()->email, ENT_QUOTES,
+        'UTF-8'); ?>"><?=htmlspecialchars($joke->getAuthor()->name, ENT_QUOTES,
+        'UTF-8'); ?></a>) on
+        <?php
+        $date = new DateTime($joke->jokedate);
+        echo $date->format('jS F Y');
+        ?> )
+        <?php if ($user): ?>
+          <?php if ($user->id == $joke->authorId || $user->hasPermission(\Ijdb\Entity\Author::EDIT_JOKES)): ?>
+          <a href="/joke/edit?id=<?=$joke->id?>">Edit</a>
+          <?php endif; ?>
+          <?php if ($user->id == $joke->authorId || $user->hasPermission(\Ijdb\Entity\Author::DELETE_JOKES)): ?>
+          <form action="/joke/delete" method="post">
+            <input type="hidden" name="id" value="<?=$joke->id?>">
+            <input type="submit" value="Delete">
+          </form>
+            <?php endif; ?>
         <?php endif; ?>
-    </body>
-</html>
+    </p>
+</blockquote>
+<?php endforeach;?>
+</div>
