@@ -11,10 +11,11 @@
 <div class="jokes">
 
 <p><?=$totalJokes?> jokes have been submitted to the Internet Joke Database.</p>
+
 <?php  foreach ($jokes as $joke):?>
 <blockquote>
-    <p>
-    <?=htmlspecialchars($joke->joketext,ENT_QUOTES, 'UTF-8'); ?>
+
+    <?=(new \Ninja\Markdown($joke->joketext))->toHtml()?>
 
     (by <a href="mailto:<?=htmlspecialchars($joke->getAuthor()->email, ENT_QUOTES,
         'UTF-8'); ?>"><?=htmlspecialchars($joke->getAuthor()->name, ENT_QUOTES,
@@ -34,7 +35,22 @@
           </form>
             <?php endif; ?>
         <?php endif; ?>
-    </p>
+
 </blockquote>
 <?php endforeach;?>
+
+Select page:
+
+<?php
+$numPages = ceil($totalJokes/10);
+for ($i = 1; $i <= $numPages; $i++):
+  if ($i == $currentPage):
+?>
+  <a class="currentpage" href="/joke/list?page=<?=$i?><?=!empty($categoryId) ? '&category=' . $categoryId : '' ?>"><?=$i?></a>
+<?php else: ?>
+  <a href="/joke/list?page=<?=$i?><?=!empty($categoryId) ? '&category=' . $categoryId : '' ?>"><?=$i?></a>
+<?php endif; ?>
+<?php endfor; ?>
+
+
 </div>
